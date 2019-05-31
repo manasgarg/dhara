@@ -1,19 +1,19 @@
 package stream
 
 type MessageId struct {
-	PartOne int64
-	PartTwo int32
+	partOne uint64
+	partTwo uint32
 }
 
 type Message struct {
-	Id   MessageId
-	Body []byte
+	id   MessageId
+	body []byte
 }
 
-func CompareMessageIds(m1 *MessageId, m2 *MessageId) int {
-	if m1.PartOne < m2.PartOne || (m1.PartOne == m2.PartOne && m1.PartTwo < m2.PartTwo) {
+func compareMessageIds(m1 *MessageId, m2 *MessageId) int {
+	if m1.partOne < m2.partOne || (m1.partOne == m2.partOne && m1.partTwo < m2.partTwo) {
 		return -1
-	} else if m1.PartOne == m2.PartOne && m1.PartTwo == m2.PartTwo {
+	} else if m1.partOne == m2.partOne && m1.partTwo == m2.partTwo {
 		return 0
 	} else {
 		return 1

@@ -115,5 +115,6 @@ func StartHTTPServer(inf string, port int) error {
 	router.GET("/add-messages", addMessage)
 	router.GET("/stream/:streamId/messages", getMessages)
 
+	utils.SLogger.Info("HTTP Server listening on ", inf, ":", port)
 	return fasthttp.ListenAndServe(fmt.Sprintf("%s:%d", inf, port), router.Handler)
 }

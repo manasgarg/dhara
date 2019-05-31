@@ -5,80 +5,76 @@ import (
 	"time"
 )
 
-const (
-	DEFAULT_MAX_MESSAGES = 10000
-)
-
 type MemStream struct {
-	Id             string
-	CreateTime     time.Time
-	UpdateTime     time.Time
-	MessageCount   time.Time
-	StartMessageId *MessageId
-	EndMessageId   *MessageId
+	id             string
+	createTime     time.Time
+	updateTime     time.Time
+	messageCount   time.Time
+	startMessageId *MessageId
+	endMessageId   *MessageId
 
-	Messages []*Message
+	messages []*Message
 }
 
 var (
-	streams = make(map[string]*MemStream)
+	memStreams = make(map[string]*MemStream)
 )
 
 func GetMemStream(streamId string) (*MemStream, error) {
-	if streams[streamId] != nil {
-		return streams[streamId], nil
+	if memStreams[streamId] != nil {
+		return memStreams[streamId], nil
 	}
 
 	now := time.Now()
 	s := &MemStream{
-		Id:         streamId,
-		CreateTime: now,
-		UpdateTime: now,
-		Messages:   make([]*Message, 0),
+		id:         streamId,
+		createTime: now,
+		updateTime: now,
+		messages:   make([]*Message, 0),
 	}
 
-	streams[streamId] = s
+	memStreams[streamId] = s
 
 	return s, nil
 }
 
 func (s *MemStream) AddMessage(messageBody []byte) *MessageId {
 	now := time.Now()
-	timestamp := now.UnixNano() / 1000
-	var counter int32 = 0
+	timestamp := uint64(now.UnixNano() / 1000)
+	var counter uint32 = 0
 
-	if s.EndMessageId != nil && s.EndMessageId.PartOne >= timestamp {
-		s.EndMessageId.PartTwo++
+	if s.endMessageId != nil && s.endMessageId.partOne >= timestamp {
+		s.endMessageId.partTwo++
 
-		timestamp = s.EndMessageId.PartOne
-		counter = s.EndMessageId.PartTwo
+		timestamp = s.endMessageId.partOne
+		counter = s.endMessageId.partTwo
 	}
 
 	messageId := MessageId{timestamp, counter}
 
-	s.Messages = append(s.Messages, &Message{Id: messageId, Body: messageBody})
-	s.UpdateTime = now
-	s.EndMessageId = &messageId
+	s.messages = append(s.messages, &Message{id: messageId, body: messageBody})
+	s.updateTime = now
+	s.endMessageId = &messageId
 
 	return &messageId
 }
 
 func (s *MemStream) GetMessages(startMessageId *MessageId, count int) []*Message {
-	if len(s.Messages) == 0 || CompareMessageIds(startMessageId, s.EndMessageId) == 1 {
+	if len(s.messages) == 0 || compareMessageIds(startMessageId, s.endMessageId) == 1 {
 		return []*Message{}
 	}
 
-	begin := sort.Search(len(s.Messages), func(i int) bool {
-		return CompareMessageIds(&s.Messages[i].Id, startMessageId) >= 0
+	begin := sort.Search(len(s.messages), func(i int) bool {
+		return compareMessageIds(&s.messages[i].id, startMessageId) >= 0
 	})
 
 	end := begin + count
-	if end > len(s.Messages)-begin {
-		end = len(s.Messages) - begin
+	if end > len(s.messages)-begin {
+		end = len(s.messages) - begin
 	}
 
 	messages := make([]*Message, end-begin)
-	copy(messages, s.Messages[begin:end])
+	copy(messages, s.messages[begin:end])
 
 	return messages
 }
